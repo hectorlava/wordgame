@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wordle</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+}
+.container {
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+#wordle-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+  margin-top: 20px;
+}
+#wordle-grid div {
+  width: 100%;
+  height: 40px;
+  line-height: 40px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f0f0f0;
+  font-size: 18px;
+}
+#keyboard {
+  margin-top: 20px;
+}
+.key {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin: 5px;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Wordle</h1>
+  <div id="wordle-grid">
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+  </div>
+  <div id="keyboard"></div>
+</div>
+</body>
+</html>
+
+<script>
+// Generate the keyboard in QWERTY layout
+const keyboardLayout = [
+  ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
+  ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
+  ["Z", "X", "C", "V", "B", "N", "M"]
+];
+const keyboardContainer = document.getElementById("keyboard");
+// Generate the keyboard buttons
+keyboardLayout.forEach(row => {
+  const rowDiv = document.createElement("div");
+  rowDiv.className = "keyboard-row";
+  row.forEach(letter => {
+    const button = document.createElement("button");
+    button.textContent = letter;
+    button.className = "key";
+    button.onclick = function() {
+      addLetter(letter);
+    };
+    rowDiv.appendChild(button);
+  });
+  keyboardContainer.appendChild(rowDiv);
+});
+
+// Read the word list
+let wordList = ""
+const xhr = new XMLHttpRequest();
+xhr.open('GET', 'SomeWords.txt', false);
+xhr.send();
+
+if (xhr.status === 200) {
+  wordList = xhr.responseText.trim().split('\n').map(word => word.toUpperCase());
+} else {
+  console.error('Error reading word list:', xhr.status);
+}
+
+const wordleGrid = document.getElementById("wordle-grid");
+let currentWord = "";
+let currentRow = 0;
+let currentCell = 0;
+
+// Function to generate a random word from the word list
+function getRandomWord() {
+  return wordList[Math.floor(Math.random() * wordList.length)];
+}
+
+const targetWord = getRandomWord();
+console.log(targetWord);
+
+// Function to add a letter to the grid
+function addLetter(letter) {
+  if (currentCell < 5) {
+    wordleGrid.children[currentRow * 5 + currentCell].textContent = letter;
+    currentWord += letter;
+    currentCell++;
+  }
+}
+
+// Function to check if the current word is in the word list
+function isWordInList(word) {
+  return wordList.includes(word.toUpperCase());
+}
+
+// Function to remove the last letter from the grid
+function removeLetter() {
+  if (currentCell > 0) {
+    currentCell--;
+    wordleGrid.children[currentRow * 5 + currentCell].textContent = "";
+    currentWord = currentWord.slice(0, -1);
+  }
+}
+
+// Function to check the entered word against the target word
+function checkWord() {
+
+  if (isWordInList(currentWord)) {
+    for (let i = 0; i < 5; i++) {
+      const cell = wordleGrid.children[currentRow * 5 + i];
+      const letter = cell.textContent;
+      if (letter === targetWord[i]) {
+        cell.style.backgroundColor = "green";
+      } else if (targetWord.includes(letter)) {
+        cell.style.backgroundColor = "yellow";
+      } else {
+        cell.style.backgroundColor = "gray";
+      }
+    }
+    if (currentWord === targetWord) {
+      alert("Congratulations! You guessed the word.");
+    } else if (currentRow === 4) {
+      alert(`Game over! The word was ${targetWord}.`);
+    } else {
+      currentWord = "";
+      currentRow++;
+      currentCell = 0;
+    }
+  } else {
+    alert("Word not in word list")
+  }
+}
+
+// Add Enter and Backspace buttons
+const enterButton = document.createElement("button");
+enterButton.textContent = "Enter";
+enterButton.className = "key";
+enterButton.onclick = checkWord;
+keyboardContainer.appendChild(enterButton);
+
+const backspaceButton = document.createElement("button");
+backspaceButton.textContent = "Backspace";
+backspaceButton.className = "key";
+backspaceButton.onclick = removeLetter;
+keyboardContainer.appendChild(backspaceButton);
+</script>
